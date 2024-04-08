@@ -1,5 +1,5 @@
 /** 基于数组实现栈 */
-class Stack {
+ class Stack {
     constructor() {
         this.items = []
     }
@@ -39,18 +39,6 @@ class Stack {
     }
 }
 
-const stack = new Stack()
-stack.push(1)
-stack.push(2)
-stack.push(3)
-stack.push(4)
-stack.push(5)
-console.log(stack,stack.toString(), stack.isEmpty(), stack.size(), stack.peek())
-console.log(stack.pop())
-console.log(stack.pop())
-console.log(stack.pop())
-console.log(stack.pop())
-console.log(stack.pop())
-console.log(stack.pop())
-console.log(stack.pop())
-console.log(stack)
+module.exports = {
+    Stack
+}
