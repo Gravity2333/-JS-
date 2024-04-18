@@ -63,7 +63,7 @@ class RBTree {
    */
   _findTreeNodeByKey(root, key) {
     if (this._isNodeNull(root)) return;
-    let current = this.root;
+    let current = root;
     if (current.key === key) {
       // 找到 返回节点
       return current;
@@ -139,19 +139,34 @@ class RBTree {
   }
 
   /**
-   * 获取叔叔节点
-   * @param {*} node
-   * return [叔叔节点，叔叔节点位置 (左/右)]
-   */
-  _getNodeUncle(node) {
+ * 获取兄弟节点
+ * @param {*} node
+ * return [兄弟节点，兄弟节点位置 (左/右)]
+ */
+  _getBortherNode(node) {
     const parent = node.parent;
     if (!parent) return;
     const nodePosition = this._getNodePositionInParent(parent, node);
-    const unclePosition =
+    const brotherPosition =
       nodePosition === RBTree.EChildPosition.LEFT
         ? RBTree.EChildPosition.RIGHT
         : RBTree.EChildPosition.LEFT;
-    return [parent[unclePosition], unclePosition];
+    return [parent[brotherPosition], brotherPosition];
+  }
+
+  /**
+   * 找到节点的后继节点
+   * @param {*} node 
+   */
+  _getSuccessor(node) {
+    if (this._isNodeNull(node)) return;
+    let current = node.right
+    let parent = null
+    while (!this._isNodeNull(current)) {
+      parent = current
+      current = current.left
+    }
+    return parent
   }
 
   /**
@@ -173,12 +188,13 @@ class RBTree {
         axisNode
       );
       this._insertNode(axisNode.parent, axisNodeInParentPosition, node);
-      if (node.right) {
-        // 挂载node右节点到axisNode左节点
-        this._insertNode(axisNode, RBTree.EChildPosition.LEFT, node.right);
-      }
-      this._insertNode(node, RBTree.EChildPosition.RIGHT, axisNode);
     }
+    if (node.right) {
+      // 挂载node右节点到axisNode左节点
+      this._insertNode(axisNode, RBTree.EChildPosition.LEFT, node.right);
+    }
+    this._insertNode(node, RBTree.EChildPosition.RIGHT, axisNode);
+
   }
 
   /**
@@ -200,12 +216,13 @@ class RBTree {
         axisNode
       );
       this._insertNode(axisNode.parent, axisNodeInParentPosition, node);
-      if (node.right) {
-        // 挂载node左节点到axisNode右节点
-        this._insertNode(axisNode, RBTree.EChildPosition.RIGHT, node.left);
-      }
-      this._insertNode(node, RBTree.EChildPosition.LEFT, axisNode);
     }
+    if (node.right) {
+      // 挂载node左节点到axisNode右节点
+      this._insertNode(axisNode, RBTree.EChildPosition.RIGHT, node.left);
+    }
+    this._insertNode(node, RBTree.EChildPosition.LEFT, axisNode);
+
   }
 
   /** 插入处理 */
@@ -218,31 +235,6 @@ class RBTree {
     );
   }
 
-  // 调整情况3
-  _adjustGrandParentBlackAndBothChildRed(grandParent, parent, uncle) {
-    uncle.color = parent.color = RBTree.ERBTNodeColor.BLACK;
-    grandParent.color = RBTree.ERBTNodeColor.RED;
-    if (grandParent === this.root) {
-      // 递归到root节点 停止
-      grandParent.color = RBTree.ERBTNodeColor.BLACK;
-      return;
-    }
-    if (
-      grandParent.parent &&
-      grandParent.parent?.color &&
-      grandParent.parent.color === RBTree.ERBTNodeColor.RED
-    ) {
-      const newParent = grandParent.parent;
-      const newGrandParent = newParent.parent;
-      const [newUncle] = this._getNodeUncle(newParent);
-      this._adjustGrandParentBlackAndBothChildRed(
-        newGrandParent,
-        newParent,
-        newUncle
-      );
-    }
-  }
-
   // 判断 情况 4 5： 父节点红，叔节点黑，祖先节点黑
   _isParentRedAndGrandParentUncleBlack(grandParent, parent, uncle) {
     return (
@@ -251,6 +243,278 @@ class RBTree {
       grandParent.color === RBTree.ERBTNodeColor.BLACK
     );
   }
+
+  _adjustInsertToRed(adjustNode) {
+    // 1. 新节点的parent 也就是找到的插入节点
+    const parent = adjustNode.parent;
+    // 2. 祖先节点，插入节点的父亲
+    const grandParent = parent.parent;
+    // 要调整节点位置
+    const adjustNodePosition = this._getNodePositionInParent(parent, adjustNode)
+    // 父节点位置
+    const parentPosition = this._getNodePositionInParent(grandParent, parent);
+    // 3. 叔叔节点,叔叔节点位置
+    const [uncle] = this._getBortherNode(parent);
+
+    // 情况3,叔叔节点，父节点都是红色，祖先节点是黑色
+    if (this._isGrandParentBlackAndBothChildRed(grandParent, parent, uncle)) {
+      uncle.color = parent.color = RBTree.ERBTNodeColor.BLACK;
+      grandParent.color = RBTree.ERBTNodeColor.RED;
+      if (grandParent === this.root) {
+        // 递归到root节点 停止
+        grandParent.color = RBTree.ERBTNodeColor.BLACK;
+        return;
+      }
+      if (
+        grandParent.parent &&
+        grandParent.parent?.color &&
+        grandParent.parent.color === RBTree.ERBTNodeColor.RED
+      ) {
+        this._adjustInsertToRed(grandParent)
+      }
+      return;
+    }
+
+    // 情况 4 5 父节点红，叔节点黑，祖先节点黑
+    if (this._isParentRedAndGrandParentUncleBlack(grandParent, parent, uncle)) {
+      // LL/RR 即：父节点在祖先节点左，插入节点在父节点左 ｜ 父节点在祖先节点右，插入节点在爷节点右
+      // LL grandparent为axis对parent右旋 + 父节点黑，祖先节点红
+      if (
+        parentPosition === RBTree.EChildPosition.LEFT &&
+        adjustNodePosition === RBTree.EChildPosition.LEFT
+      ) {
+        this._rightRound(grandParent, parent);
+        // 上色
+        parent.color = RBTree.ERBTNodeColor.BLACK;
+        grandParent.color = RBTree.ERBTNodeColor.RED;
+      }
+
+      // RR grandparent为axis对parent左旋 + 父节点黑，祖先节点红
+      if (
+        parentPosition === RBTree.EChildPosition.RIGHT &&
+        adjustNodePosition === RBTree.EChildPosition.RIGHT
+      ) {
+        this._leftRound(grandParent, parent);
+        // 上色
+        parent.color = RBTree.ERBTNodeColor.BLACK;
+        grandParent.color = RBTree.ERBTNodeColor.RED;
+      }
+
+      // LR/RL 即：父节点在祖先节点左，插入节点在父节点右 ｜ 父节点在祖先节点右，插入节点在爷节点左
+      // LR 先以parent为axis 对新插入节点左旋，再以grandParent为axis对新插入节点右旋
+      // newNode上色为黑，grandParent上色为红
+      if (
+        parentPosition === RBTree.EChildPosition.LEFT &&
+        adjustNodePosition === RBTree.EChildPosition.RIGHT
+      ) {
+        // 左旋
+        this._leftRound(parent, newNode);
+        // 右旋
+        this._rightRound(grandParent, newNode);
+        // 上色
+        newNode.color = RBTree.ERBTNodeColor.BLACK;
+        grandParent.color = RBTree.ERBTNodeColor.RED;
+      }
+
+      // RL 先以parent为axis 对新插入节点右旋，再以grandParent为axis对新插入节点左旋
+      if (
+        parentPosition === RBTree.EChildPosition.RIGHT &&
+        adjustNodePosition === RBTree.EChildPosition.LEFT
+      ) {
+        // 右旋
+        this._rightRound(parent, newNode);
+        // 左旋
+        this._leftRound(grandParent, newNode);
+        // 上色
+        newNode.color = RBTree.ERBTNodeColor.BLACK;
+        grandParent.color = RBTree.ERBTNodeColor.RED;
+      }
+    }
+  }
+
+  /** 删除处理 */
+
+  /**
+   * 获取非双孩子节点的孩子和位置
+   * @param {*} node 
+   * return [childNode,position]
+   */
+  _getNoNDoubleChildNode(node) {
+    if (this._isNodeNull(node)) return []
+    let childPosition;
+    if (!this._isNodeNull(node[RBTree.EChildPosition.LEFT])) {
+      // 说明左孩子为空
+      childPosition = RBTree.EChildPosition.LEFT
+    } else if (!this._isNodeNull(node[RBTree.EChildPosition.RIGHT])) {
+      // 说明左孩子为空
+      childPosition = RBTree.EChildPosition.RIGHT
+    } else {
+      childPosition = null
+    }
+    if (!childPosition) return []
+    return [node[childPosition], childPosition]
+  }
+
+  /**
+   * 删除非双孩子节点
+   * @param {*} toBeDeletedNode 
+   */
+  _deleteNoNDoubleChildNode(toBeDeletedNode) {
+    if (this._isNodeNull(toBeDeletedNode)) return false
+    // 如果是跟节点的情况，直接删除
+    if (toBeDeletedNode === this.root) {
+      this.root === null
+      return true
+    }
+    // 不是跟节点
+    const [child] = this._getNoNDoubleChildNode(toBeDeletedNode)
+    let deletedNodePosition = this._getNodePositionInParent(toBeDeletedNode.parent, toBeDeletedNode)
+    if (!child) {
+      // 无孩子的情况，创建NIL节点
+      this._insertNode(toBeDeletedNode.parent, deletedNodePosition, RBTree.generateNILNode())
+    } else {
+      this._insertNode(toBeDeletedNode.parent, deletedNodePosition, child)
+    }
+    return true
+  }
+
+  /**
+   * 处理case4 brother的双侄子都是black
+   * @param {*} toBeDeletedNode 
+   */
+  _adjustDeleteDoubleBlackNephewCase(toBeDeletedNode) {
+    if (this._isNodeNull(toBeDeletedNode)) return
+    if (toBeDeletedNode === this.root) {
+      toBeDeletedNode.color = RBTree.ERBTNodeColor.BLACK
+      return // 到跟节点停止调整
+    }
+    const parent = toBeDeletedNode.parent
+    const [brother] = this._getBortherNode(toBeDeletedNode)
+    // 兄弟节点置红
+    brother.color === RBTree.ERBTNodeColor.RED
+    //父节点要判断，如果是红色置黑 结束，如果是黑色，继续调整
+    if (parent.color === RBTree.ERBTNodeColor.RED) {
+      parent.color = RBTree.ERBTNodeColor.BLACK
+      return
+    } else if (parent.color === RBTree.ERBTNodeColor.BLACK) {
+      // 继续调整parent
+      return this._adjustDeleteDoubleBlackNephewCase(parent)
+    }
+    return
+  }
+
+  /**
+   * 删除节点
+   * @param {*} toBeDeletedNode 待删除节点
+   */
+  _deleteNode(toBeDeletedNode) {
+    if (this._isNodeNull(toBeDeletedNode)) return false
+    // 如果待删除节点有两个子节点，找到其后继节点，并且交换，转换成删除其后继节点
+    if (!this._isNodeNull(toBeDeletedNode.left) && !this._isNodeNull(toBeDeletedNode.right)) {
+      const successor = this._getSuccessor(toBeDeletedNode)
+      if (this._isNodeNull(successor)) return false
+      // 交换待删除节点和后继节点key值
+      const temp = [successor.key, successor.value]
+      successor.key = toBeDeletedNode.key
+      successor.value = toBeDeletedNode.value
+      toBeDeletedNode.key = temp[0]
+      toBeDeletedNode.value = temp[1]
+      // 转换成对只有一个或0个子节点后继节点删除的过程
+      // 递归调用此函数
+      return this._deleteNode(successor)
+    } else {
+      // 待删除节点最多有一个孩子
+      // case 1 如果待删除的是跟节点
+      if (toBeDeletedNode === this.root) {
+        this.root === null
+        return true
+      }
+      // 如果待删除节点为红色，直接删除
+      if (toBeDeletedNode.color === RBTree.ERBTNodeColor.RED) {
+        return this._deleteNoNDoubleChildNode(toBeDeletedNode)
+      }
+
+      // 如果被删除的节点是黑色的
+      // case 2 如果剩下的节点是红色的，可以将红色改成黑色 保证黑色数量不变
+      const [toBeDeletedChild] = this._getNoNDoubleChildNode(toBeDeletedNode)
+      if (toBeDeletedChild && toBeDeletedChild.color === RBTree.ERBTNodeColor.RED) {
+        toBeDeletedChild.color = RBTree.ERBTNodeColor.BLACK
+        return this._deleteNoNDoubleChildNode(toBeDeletedNode)
+      }
+
+      // 如果删除节点是黑色的 并且其子节点也是黑色的，那么会出现缺少黑色问题 - 黑黑
+      // 获取父节点
+      const parent = toBeDeletedNode.parent
+      // 待删除节点的位置
+      const toBeDeletedPosition = this._getNodePositionInParent(parent, toBeDeletedNode)
+      // 获取兄弟节点
+      const [brother, brotherPosition] = this._getBortherNode(toBeDeletedNode)
+
+      // case 3 如果待删除节点黑 兄弟节点红，需要先调整，再删除
+      if (brother.color === RBTree.ERBTNodeColor.RED) {
+        // 兄弟节点在右边，以parent为axis 左旋兄弟节点，并且将兄弟颜色改成黑色，parent改成红色
+        if (brotherPosition === RBTree.EChildPosition.RIGHT) {
+          this._leftRound(parent, brother)
+          parent.color = RBTree.ERBTNodeColor.RED
+          brother.color = RBTree.ERBTNodeColor.BLACK
+        }
+        // 兄弟节点在左边，以parent为axis 右旋兄弟节点，并且将兄弟颜色改成黑色，parent改成红色
+        else if (brotherPosition === RBTree.EChildPosition.LEFT) {
+          this._rightRound(parent, brother)
+          parent.color = RBTree.ERBTNodeColor.RED
+          brother.color = RBTree.ERBTNodeColor.BLACK
+        }
+        // 重新调用删除操作
+        return this._deleteNode(toBeDeletedNode)
+      }
+
+      // 兄弟节点为黑 直接删除节点
+      this._deleteNoNDoubleChildNode(toBeDeletedNode)
+      // 定义左侄子
+      const leftNephew = brother.left
+      // 定义右侄子
+      const rightNephew = brother.right
+      // case 4 左右侄子都是黑色
+      if (rightNephew.color === RBTree.ERBTNodeColor.BLACK && leftNephew.color === RBTree.ERBTNodeColor.BLACK) {
+        this._adjustDeleteDoubleBlackNephewCase(toBeDeletedNode)
+        return
+      }
+      // case 左右侄子存在红色
+      if (rightNephew.color === RBTree.ERBTNodeColor.RED || leftNephew.color === RBTree.ERBTNodeColor.RED) {
+        // L兄弟在父左 
+        if (brotherPosition === RBTree.EChildPosition.LEFT) {
+          // LL 兄弟左边存在侄子 右旋brother  parent为axis brother为parent颜色leftNephew和parent颜色黑
+          if (leftNephew.color === RBTree.ERBTNodeColor.RED) {
+            this._rightRound(parent, brother)
+            brother.color = parent.color
+            leftNephew.color = parent.color = RBTree.ERBTNodeColor.BLACK
+          }
+          // LR 兄弟右边存在侄子 先以brother为axis左旋rightNephew，再用parent为axis右旋rightNephew rightNephew为parent颜色 brother和parent都是黑色
+          else {
+            this._leftRound(brother, rightNephew)
+            this._rightRound(parent, rightNephew)
+            rightNephew.color = parent.color
+            brother.color = parent.color = RBTree.ERBTNodeColor.BLACK
+          }
+        } else {
+          // RR 兄弟右边存在侄子 左旋brother  parent为axis brother为parent颜色rightNephew和parent颜色黑
+          if (rightNephew.color === RBTree.ERBTNodeColor.RED) {
+            this._leftRound(parent, brother)
+            brother.color = parent.color
+            rightNephew.color = parent.color = RBTree.ERBTNodeColor.BLACK
+          }
+          // RL 兄弟左边存在侄子 先以brother为axis右旋leftNephew，再用parent为axis左旋leftNephew leftNephew为parent颜色 brother和parent都是黑色
+          this._rightRound(brother, leftNephew)
+          this._leftRound(parent, leftNephew)
+          leftNephew.color = parent.color
+          brother.color = parent.color = RBTree.ERBTNodeColor.BLACK
+        }
+        return
+      }
+    }
+
+  }
+
 
   /** ------------- 外部暴露方法 --------------- */
   // 树是否空
@@ -274,7 +538,6 @@ class RBTree {
       this.root,
       newNode.key
     );
-    // console.log(insertNode, insertPosition);
 
     // 情况2: 如果要插入的节点是黑色，直接插入，无需任何调整
     if (insertNode.color === RBTree.ERBTNodeColor.BLACK) {
@@ -285,101 +548,75 @@ class RBTree {
 
     // 如果插入节点是红色的情况 （此时插入节点一定不是根，因为根节点必须是黑色）
     if (insertNode.color === RBTree.ERBTNodeColor.RED) {
-      // 此时需要找到几个相关节点
-      // 1. 新节点的parent 也就是找到的插入节点
-      const parent = insertNode;
-      // 2. 祖先节点，插入节点的父亲
-      const grandParent = parent.parent;
-      // 父节点位置
-      const parentPosition = this._getNodePositionInParent(grandParent, parent);
-      // 3. 叔叔节点,叔叔节点位置
-      const [uncle, unclePosition] = this._getNodeUncle(parent);
+      // 插入
+      this._insertNode(insertNode, insertPosition, newNode);
+      // 调整插入到红节点
+      this._adjustInsertToRed(newNode)
 
-      // 情况3,叔叔节点，父节点都是红色，祖先节点是黑色
-      if (this._isGrandParentBlackAndBothChildRed(grandParent, parent, uncle)) {
-        this._adjustGrandParentBlackAndBothChildRed(grandParent, parent, uncle);
-        // 调整后插入
-        this._insertNode(parent, insertPosition, newNode);
-        return;
-      }
-
-      // 情况 4 5 父节点红，叔节点黑，祖先节点黑
-      if (_isParentRedAndGrandParentUncleBlack(grandParent, parent, uncle)) {
-        // LL/RR 即：父节点在祖先节点左，插入节点在父节点左 ｜ 父节点在祖先节点右，插入节点在爷节点右
-        // LL grandparent为axis对parent右旋 + 父节点黑，祖先节点红
-        if (
-          parentPosition === RBTree.EChildPosition.LEFT &&
-          insertPosition === RBTree.EChildPosition.LEFT
-        ) {
-          this._rightRound(grandParent, parent);
-          // 上色
-          parent.color = RBTree.EChildPosition.BLACK;
-          grandParent.color = RBTree.EChildPosition.RED;
-          this._insertNode(parent, insertPosition, newNode);
-        }
-
-        // RR grandparent为axis对parent左旋 + 父节点黑，祖先节点红
-        if (
-          parentPosition === RBTree.EChildPosition.RIGHT &&
-          insertPosition === RBTree.EChildPosition.RIGHT
-        ) {
-          this._leftRound(grandParent, parent);
-          // 上色
-          parent.color = RBTree.EChildPosition.BLACK;
-          grandParent.color = RBTree.EChildPosition.RED;
-          this._insertNode(parent, insertPosition, newNode);
-        }
-
-        // LR/RL 即：父节点在祖先节点左，插入节点在父节点右 ｜ 父节点在祖先节点右，插入节点在爷节点左
-        // LR 先以parent为axis 对新插入节点左旋，再以grandParent为axis对新插入节点右旋
-        // newNode上色为黑，grandParent上色为红
-        if (
-          parentPosition === RBTree.EChildPosition.LEFT &&
-          insertPosition === RBTree.EChildPosition.RIGHT
-        ) {
-          // 先插入，后调整
-          this._insertNode(parent, insertPosition, newNode);
-          // 左旋
-          this._leftRound(parent, newNode);
-          // 右旋
-          this._rightRound(grandParent, newNode);
-          // 上色
-          newNode.color = RBTree.ERBTNodeColor.BLACK;
-          grandParent.color = RBTree.ERBTNodeColor.RED;
-        }
-
-        // RL 先以parent为axis 对新插入节点右旋，再以grandParent为axis对新插入节点左旋
-        if (
-          parentPosition === RBTree.EChildPosition.RIGHT &&
-          insertPosition === RBTree.EChildPosition.LEFT
-        ) {
-          // 先插入，后调整
-          this._insertNode(parent, insertPosition, newNode);
-          // 右旋
-          this._rightRound(parent, newNode);
-          // 左旋
-          this._leftRound(grandParent, newNode);
-          // 上色
-          newNode.color = RBTree.ERBTNodeColor.BLACK;
-          grandParent.color = RBTree.ERBTNodeColor.RED;
-        }
-      }
     }
   }
 
   // 删除节点
-  delete(key) {}
+  delete(key) {
+    const toBeDeletedNode = this._findTreeNodeByKey(this.root, key)
+    if (!toBeDeletedNode) return false
+    this._deleteNode(toBeDeletedNode)
+  }
 
   // 搜索节点
-  search() {}
+  search(key) {
+    return this._findTreeNodeByKey(this.root, key)?.value
+  }
 }
 
 //  10 18 8 9 3 2
 const rbTree = new RBTree();
-rbTree.insert(10, "根节点");
-rbTree.insert(18, "18节点");
-rbTree.insert(8, "8节点");
-rbTree.insert(7, "7节点");
-rbTree.insert(9, "9节点");
-rbTree.insert(6, "6节点");
+// rbTree.insert(10, "根节点");
+// rbTree.insert(18, "18节点");
+// rbTree.insert(8, "8节点");
+// rbTree.insert(7, "7节点");
+// rbTree.insert(9, "9节点");
+// rbTree.insert(6, "6节点");
+
+// TEST2
+// rbTree.insert(60);
+// rbTree.insert(56);
+// rbTree.insert(68);
+// rbTree.insert(45);
+// rbTree.insert(58);
+// rbTree.insert(64);
+// rbTree.insert(72);
+// rbTree.insert(43);
+// rbTree.insert(49);
+
+// TEST3
+// rbTree.insert(6);
+// rbTree.insert(2);
+// rbTree.insert(15);
+// rbTree.insert(10);
+// rbTree.insert(18);
+// rbTree.insert(9);
+// rbTree.insert(12);
+// rbTree.insert(20);
+// rbTree.insert(1);
+// rbTree.insert(0);
+// rbTree.delete(6)
+
+//TEST4
+// rbTree.insert(10);
+// rbTree.insert(11);
+// rbTree.insert(9);
+// rbTree.insert(8);
+// debugger
+
+// TEST 8 6 10 11 12 13 14 15
+rbTree.insert(8);
+rbTree.insert(6);
+rbTree.insert(10);
+rbTree.insert(11);
+rbTree.insert(12);
+rbTree.insert(13);
+rbTree.insert(14);
+rbTree.insert(15);
+rbTree.delete(10)
 console.log(rbTree.root);
