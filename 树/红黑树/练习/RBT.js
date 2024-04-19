@@ -334,7 +334,7 @@ export default class RBTree {
         // 左旋
         this._leftRound(grandParent, adjustNode);
         // 上色
-        adjustNode.color = RBTree.ERBTNodeColor.BLACK;
+        newNode.color = RBTree.ERBTNodeColor.BLACK;
         grandParent.color = RBTree.ERBTNodeColor.RED;
       }
     }
@@ -371,7 +371,7 @@ export default class RBTree {
     if (this._isNodeNull(toBeDeletedNode)) return false;
     // 如果是跟节点的情况，直接删除
     if (toBeDeletedNode === this.root) {
-      this.root === null;
+      this.root = null;
       return true;
     }
     // 不是跟节点
@@ -564,7 +564,31 @@ export default class RBTree {
       value,
     });
   }
-  
+
+  /** 获取echarts数据 */
+  _toEchartsData(node) {
+    const data = {};
+    if (!node) return {};
+    if (node.key === RBTree.NIL_KEY) {
+      return {
+        name: "NIL",
+        itemStyle: {
+          color: "black",
+        },
+        symbol: "rect",
+        symbolSize: 30,
+      };
+    }
+    data.name = node.key;
+    data.itemStyle = {
+      color: node.color === RBTree.ERBTNodeColor.RED ? "red" : "black",
+    };
+    data.children = [];
+    data.children.push(this._toEchartsData(node.left));
+    data.children.push(this._toEchartsData(node.right));
+    return data;
+  }
+
   /** ------------- 外部暴露方法 --------------- */
   // 树是否空
   empty() {
@@ -654,8 +678,12 @@ export default class RBTree {
     }
     return { key: previous.key, value: previous.value };
   }
-}
 
+  getEchartsData() {
+    if (null === this.root) return {};
+    return this._toEchartsData(this.root);
+  }
+}
 
 //  10 18 8 9 3 2
 const rbTree = new RBTree();
