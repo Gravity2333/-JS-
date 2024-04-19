@@ -139,10 +139,10 @@ class RBTree {
   }
 
   /**
- * 获取兄弟节点
- * @param {*} node
- * return [兄弟节点，兄弟节点位置 (左/右)]
- */
+   * 获取兄弟节点
+   * @param {*} node
+   * return [兄弟节点，兄弟节点位置 (左/右)]
+   */
   _getBortherNode(node) {
     const parent = node.parent;
     if (!parent) return;
@@ -156,17 +156,17 @@ class RBTree {
 
   /**
    * 找到节点的后继节点
-   * @param {*} node 
+   * @param {*} node
    */
   _getSuccessor(node) {
     if (this._isNodeNull(node)) return;
-    let current = node.right
-    let parent = null
+    let current = node.right;
+    let parent = null;
     while (!this._isNodeNull(current)) {
-      parent = current
-      current = current.left
+      parent = current;
+      current = current.left;
     }
-    return parent
+    return parent;
   }
 
   /**
@@ -194,7 +194,6 @@ class RBTree {
       this._insertNode(axisNode, RBTree.EChildPosition.LEFT, node.right);
     }
     this._insertNode(node, RBTree.EChildPosition.RIGHT, axisNode);
-
   }
 
   /**
@@ -222,7 +221,6 @@ class RBTree {
       this._insertNode(axisNode, RBTree.EChildPosition.RIGHT, node.left);
     }
     this._insertNode(node, RBTree.EChildPosition.LEFT, axisNode);
-
   }
 
   /** 插入处理 */
@@ -244,13 +242,21 @@ class RBTree {
     );
   }
 
+  /**
+   * 调节红色节点插入
+   * @param  adjustNode
+   * @returns
+   */
   _adjustInsertToRed(adjustNode) {
     // 1. 新节点的parent 也就是找到的插入节点
     const parent = adjustNode.parent;
     // 2. 祖先节点，插入节点的父亲
     const grandParent = parent.parent;
     // 要调整节点位置
-    const adjustNodePosition = this._getNodePositionInParent(parent, adjustNode)
+    const adjustNodePosition = this._getNodePositionInParent(
+      parent,
+      adjustNode
+    );
     // 父节点位置
     const parentPosition = this._getNodePositionInParent(grandParent, parent);
     // 3. 叔叔节点,叔叔节点位置
@@ -270,7 +276,7 @@ class RBTree {
         grandParent.parent?.color &&
         grandParent.parent.color === RBTree.ERBTNodeColor.RED
       ) {
-        this._adjustInsertToRed(grandParent)
+        this._adjustInsertToRed(grandParent);
       }
       return;
     }
@@ -336,71 +342,145 @@ class RBTree {
 
   /**
    * 获取非双孩子节点的孩子和位置
-   * @param {*} node 
+   * @param {*} node
    * return [childNode,position]
    */
   _getNoNDoubleChildNode(node) {
-    if (this._isNodeNull(node)) return []
+    if (this._isNodeNull(node)) return [];
     let childPosition;
     if (!this._isNodeNull(node[RBTree.EChildPosition.LEFT])) {
       // 说明左孩子为空
-      childPosition = RBTree.EChildPosition.LEFT
+      childPosition = RBTree.EChildPosition.LEFT;
     } else if (!this._isNodeNull(node[RBTree.EChildPosition.RIGHT])) {
       // 说明左孩子为空
-      childPosition = RBTree.EChildPosition.RIGHT
+      childPosition = RBTree.EChildPosition.RIGHT;
     } else {
-      childPosition = null
+      childPosition = null;
     }
-    if (!childPosition) return []
-    return [node[childPosition], childPosition]
+    if (!childPosition) return [];
+    return [node[childPosition], childPosition];
   }
 
   /**
    * 删除非双孩子节点
-   * @param {*} toBeDeletedNode 
+   * @param {*} toBeDeletedNode
    */
   _deleteNoNDoubleChildNode(toBeDeletedNode) {
-    if (this._isNodeNull(toBeDeletedNode)) return false
+    if (this._isNodeNull(toBeDeletedNode)) return false;
     // 如果是跟节点的情况，直接删除
     if (toBeDeletedNode === this.root) {
-      this.root === null
-      return true
+      this.root === null;
+      return true;
     }
     // 不是跟节点
-    const [child] = this._getNoNDoubleChildNode(toBeDeletedNode)
-    let deletedNodePosition = this._getNodePositionInParent(toBeDeletedNode.parent, toBeDeletedNode)
+    const [child] = this._getNoNDoubleChildNode(toBeDeletedNode);
+    let deletedNodePosition = this._getNodePositionInParent(
+      toBeDeletedNode.parent,
+      toBeDeletedNode
+    );
     if (!child) {
       // 无孩子的情况，创建NIL节点
-      this._insertNode(toBeDeletedNode.parent, deletedNodePosition, RBTree.generateNILNode())
+      this._insertNode(
+        toBeDeletedNode.parent,
+        deletedNodePosition,
+        RBTree.generateNILNode()
+      );
     } else {
-      this._insertNode(toBeDeletedNode.parent, deletedNodePosition, child)
+      this._insertNode(toBeDeletedNode.parent, deletedNodePosition, child);
     }
-    return true
+    return true;
   }
 
   /**
-   * 处理case4 brother的双侄子都是black
-   * @param {*} toBeDeletedNode 
+   * 调节黑-黑 （缺少黑色情况）
+   * @param  toBeDeletedNode
+   * @returns
    */
-  _adjustDeleteDoubleBlackNephewCase(toBeDeletedNode) {
-    if (this._isNodeNull(toBeDeletedNode)) return
+  _adjustDeleteDoubleBlack(toBeDeletedNode) {
+    if (this._isNodeNull(toBeDeletedNode)) return;
     if (toBeDeletedNode === this.root) {
-      toBeDeletedNode.color = RBTree.ERBTNodeColor.BLACK
-      return // 到跟节点停止调整
+      toBeDeletedNode.color = RBTree.ERBTNodeColor.BLACK;
+      return; // 到跟节点停止调整
     }
-    const parent = toBeDeletedNode.parent
-    const [brother] = this._getBortherNode(toBeDeletedNode)
-    // 兄弟节点置红
-    brother.color === RBTree.ERBTNodeColor.RED
-    //父节点要判断，如果是红色置黑 结束，如果是黑色，继续调整
-    if (parent.color === RBTree.ERBTNodeColor.RED) {
-      parent.color = RBTree.ERBTNodeColor.BLACK
-      return
-    } else if (parent.color === RBTree.ERBTNodeColor.BLACK) {
-      // 继续调整parent
-      return this._adjustDeleteDoubleBlackNephewCase(parent)
+    // 获取父节点
+    const parent = toBeDeletedNode.parent;
+    // 获取兄弟节点
+    const [brother, brotherPosition] = this._getBortherNode(toBeDeletedNode);
+
+    // case 3 如果待删除节点黑 兄弟节点红，需要先调整，再删除
+    if (brother.color === RBTree.ERBTNodeColor.RED) {
+      // 兄弟节点在右边，以parent为axis 左旋兄弟节点，并且将兄弟颜色改成黑色，parent改成红色
+      if (brotherPosition === RBTree.EChildPosition.RIGHT) {
+        this._leftRound(parent, brother);
+        parent.color = RBTree.ERBTNodeColor.RED;
+        brother.color = RBTree.ERBTNodeColor.BLACK;
+      }
+      // 兄弟节点在左边，以parent为axis 右旋兄弟节点，并且将兄弟颜色改成黑色，parent改成红色
+      else if (brotherPosition === RBTree.EChildPosition.LEFT) {
+        this._rightRound(parent, brother);
+        parent.color = RBTree.ERBTNodeColor.RED;
+        brother.color = RBTree.ERBTNodeColor.BLACK;
+      }
+      // 重新调用删除操作
+      return this._deleteNode(toBeDeletedNode);
     }
-    return
+
+    // 定义左侄子
+    const leftNephew = brother.left;
+    // 定义右侄子
+    const rightNephew = brother.right;
+    // case 4 左右侄子都是黑色
+    if (
+      rightNephew.color === RBTree.ERBTNodeColor.BLACK &&
+      leftNephew.color === RBTree.ERBTNodeColor.BLACK
+    ) {
+      // 兄弟节点置红
+      brother.color = RBTree.ERBTNodeColor.RED;
+      //父节点要判断，如果是红色置黑 结束，如果是黑色，继续调整
+      if (parent.color === RBTree.ERBTNodeColor.RED) {
+        parent.color = RBTree.ERBTNodeColor.BLACK;
+        return;
+      } else if (parent.color === RBTree.ERBTNodeColor.BLACK) {
+        // 继续调整parent
+        return this._adjustDeleteDoubleBlack(parent);
+      }
+      return;
+    }
+    // case 左右侄子存在红色
+    if (
+      rightNephew.color === RBTree.ERBTNodeColor.RED ||
+      leftNephew.color === RBTree.ERBTNodeColor.RED
+    ) {
+      // L兄弟在父左
+      if (brotherPosition === RBTree.EChildPosition.LEFT) {
+        // LL 兄弟左边存在侄子 右旋brother  parent为axis brother为parent颜色leftNephew和parent颜色黑
+        if (leftNephew.color === RBTree.ERBTNodeColor.RED) {
+          this._rightRound(parent, brother);
+          brother.color = parent.color;
+          leftNephew.color = parent.color = RBTree.ERBTNodeColor.BLACK;
+        }
+        // LR 兄弟右边存在侄子 先以brother为axis左旋rightNephew，再用parent为axis右旋rightNephew rightNephew为parent颜色 brother和parent都是黑色
+        else {
+          this._leftRound(brother, rightNephew);
+          this._rightRound(parent, rightNephew);
+          rightNephew.color = parent.color;
+          brother.color = parent.color = RBTree.ERBTNodeColor.BLACK;
+        }
+      } else {
+        // RR 兄弟右边存在侄子 左旋brother  parent为axis brother为parent颜色rightNephew和parent颜色黑
+        if (rightNephew.color === RBTree.ERBTNodeColor.RED) {
+          this._leftRound(parent, brother);
+          brother.color = parent.color;
+          rightNephew.color = parent.color = RBTree.ERBTNodeColor.BLACK;
+        }
+        // RL 兄弟左边存在侄子 先以brother为axis右旋leftNephew，再用parent为axis左旋leftNephew leftNephew为parent颜色 brother和parent都是黑色
+        this._rightRound(brother, leftNephew);
+        this._leftRound(parent, leftNephew);
+        leftNephew.color = parent.color;
+        brother.color = parent.color = RBTree.ERBTNodeColor.BLACK;
+      }
+      return;
+    }
   }
 
   /**
@@ -408,113 +488,80 @@ class RBTree {
    * @param {*} toBeDeletedNode 待删除节点
    */
   _deleteNode(toBeDeletedNode) {
-    if (this._isNodeNull(toBeDeletedNode)) return false
+    if (this._isNodeNull(toBeDeletedNode)) return false;
     // 如果待删除节点有两个子节点，找到其后继节点，并且交换，转换成删除其后继节点
-    if (!this._isNodeNull(toBeDeletedNode.left) && !this._isNodeNull(toBeDeletedNode.right)) {
-      const successor = this._getSuccessor(toBeDeletedNode)
-      if (this._isNodeNull(successor)) return false
+    if (
+      !this._isNodeNull(toBeDeletedNode.left) &&
+      !this._isNodeNull(toBeDeletedNode.right)
+    ) {
+      const successor = this._getSuccessor(toBeDeletedNode);
+      if (this._isNodeNull(successor)) return false;
       // 交换待删除节点和后继节点key值
-      const temp = [successor.key, successor.value]
-      successor.key = toBeDeletedNode.key
-      successor.value = toBeDeletedNode.value
-      toBeDeletedNode.key = temp[0]
-      toBeDeletedNode.value = temp[1]
+      const temp = [successor.key, successor.value];
+      successor.key = toBeDeletedNode.key;
+      successor.value = toBeDeletedNode.value;
+      toBeDeletedNode.key = temp[0];
+      toBeDeletedNode.value = temp[1];
       // 转换成对只有一个或0个子节点后继节点删除的过程
       // 递归调用此函数
-      return this._deleteNode(successor)
+      return this._deleteNode(successor);
     } else {
       // 待删除节点最多有一个孩子
       // case 1 如果待删除的是跟节点
       if (toBeDeletedNode === this.root) {
-        this.root === null
-        return true
+        this.root === null;
+        return true;
       }
       // 如果待删除节点为红色，直接删除
       if (toBeDeletedNode.color === RBTree.ERBTNodeColor.RED) {
-        return this._deleteNoNDoubleChildNode(toBeDeletedNode)
+        return this._deleteNoNDoubleChildNode(toBeDeletedNode);
       }
 
       // 如果被删除的节点是黑色的
       // case 2 如果剩下的节点是红色的，可以将红色改成黑色 保证黑色数量不变
-      const [toBeDeletedChild] = this._getNoNDoubleChildNode(toBeDeletedNode)
-      if (toBeDeletedChild && toBeDeletedChild.color === RBTree.ERBTNodeColor.RED) {
-        toBeDeletedChild.color = RBTree.ERBTNodeColor.BLACK
-        return this._deleteNoNDoubleChildNode(toBeDeletedNode)
+      const [remainingNode] = this._getNoNDoubleChildNode(toBeDeletedNode);
+      if (remainingNode && remainingNode.color === RBTree.ERBTNodeColor.RED) {
+        remainingNode.color = RBTree.ERBTNodeColor.BLACK;
+        return this._deleteNoNDoubleChildNode(toBeDeletedNode);
       }
 
       // 如果删除节点是黑色的 并且其子节点也是黑色的，那么会出现缺少黑色问题 - 黑黑
-      // 获取父节点
-      const parent = toBeDeletedNode.parent
-      // 待删除节点的位置
-      const toBeDeletedPosition = this._getNodePositionInParent(parent, toBeDeletedNode)
-      // 获取兄弟节点
-      const [brother, brotherPosition] = this._getBortherNode(toBeDeletedNode)
-
-      // case 3 如果待删除节点黑 兄弟节点红，需要先调整，再删除
-      if (brother.color === RBTree.ERBTNodeColor.RED) {
-        // 兄弟节点在右边，以parent为axis 左旋兄弟节点，并且将兄弟颜色改成黑色，parent改成红色
-        if (brotherPosition === RBTree.EChildPosition.RIGHT) {
-          this._leftRound(parent, brother)
-          parent.color = RBTree.ERBTNodeColor.RED
-          brother.color = RBTree.ERBTNodeColor.BLACK
-        }
-        // 兄弟节点在左边，以parent为axis 右旋兄弟节点，并且将兄弟颜色改成黑色，parent改成红色
-        else if (brotherPosition === RBTree.EChildPosition.LEFT) {
-          this._rightRound(parent, brother)
-          parent.color = RBTree.ERBTNodeColor.RED
-          brother.color = RBTree.ERBTNodeColor.BLACK
-        }
-        // 重新调用删除操作
-        return this._deleteNode(toBeDeletedNode)
-      }
-
-      // 兄弟节点为黑 直接删除节点
-      this._deleteNoNDoubleChildNode(toBeDeletedNode)
-      // 定义左侄子
-      const leftNephew = brother.left
-      // 定义右侄子
-      const rightNephew = brother.right
-      // case 4 左右侄子都是黑色
-      if (rightNephew.color === RBTree.ERBTNodeColor.BLACK && leftNephew.color === RBTree.ERBTNodeColor.BLACK) {
-        this._adjustDeleteDoubleBlackNephewCase(toBeDeletedNode)
-        return
-      }
-      // case 左右侄子存在红色
-      if (rightNephew.color === RBTree.ERBTNodeColor.RED || leftNephew.color === RBTree.ERBTNodeColor.RED) {
-        // L兄弟在父左 
-        if (brotherPosition === RBTree.EChildPosition.LEFT) {
-          // LL 兄弟左边存在侄子 右旋brother  parent为axis brother为parent颜色leftNephew和parent颜色黑
-          if (leftNephew.color === RBTree.ERBTNodeColor.RED) {
-            this._rightRound(parent, brother)
-            brother.color = parent.color
-            leftNephew.color = parent.color = RBTree.ERBTNodeColor.BLACK
-          }
-          // LR 兄弟右边存在侄子 先以brother为axis左旋rightNephew，再用parent为axis右旋rightNephew rightNephew为parent颜色 brother和parent都是黑色
-          else {
-            this._leftRound(brother, rightNephew)
-            this._rightRound(parent, rightNephew)
-            rightNephew.color = parent.color
-            brother.color = parent.color = RBTree.ERBTNodeColor.BLACK
-          }
-        } else {
-          // RR 兄弟右边存在侄子 左旋brother  parent为axis brother为parent颜色rightNephew和parent颜色黑
-          if (rightNephew.color === RBTree.ERBTNodeColor.RED) {
-            this._leftRound(parent, brother)
-            brother.color = parent.color
-            rightNephew.color = parent.color = RBTree.ERBTNodeColor.BLACK
-          }
-          // RL 兄弟左边存在侄子 先以brother为axis右旋leftNephew，再用parent为axis左旋leftNephew leftNephew为parent颜色 brother和parent都是黑色
-          this._rightRound(brother, leftNephew)
-          this._leftRound(parent, leftNephew)
-          leftNephew.color = parent.color
-          brother.color = parent.color = RBTree.ERBTNodeColor.BLACK
-        }
-        return
-      }
+      this._adjustDeleteDoubleBlack(toBeDeletedNode);
+      return this._deleteNoNDoubleChildNode(toBeDeletedNode);
     }
-
   }
 
+  /** 前序遍历方法 */
+  _perOrderTraversalNodes(node, callback) {
+    if (this._isNodeNull(node)) return;
+    callback(node.key, node.value);
+    this._perOrderTraversalNodes(node.left, callback);
+    this._perOrderTraversalNodes(node.right, callback);
+  }
+
+  /** 中序遍历方法 */
+  _inOrderTraversalNodes(node, callback) {
+    if (this._isNodeNull(node)) return;
+    this._perOrderTraversalNodes(node.left, callback);
+    callback(node.key, node.value);
+    this._perOrderTraversalNodes(node.right, callback);
+  }
+
+  /** 后序遍历方法 */
+  _postOrderTraversalNodes(node, callback) {
+    if (this._isNodeNull(node)) return;
+    this._perOrderTraversalNodes(node.left, callback);
+    this._perOrderTraversalNodes(node.right, callback);
+    callback(node.key, node.value);
+  }
+
+  /** 默认遍历回调 */
+  _defaultTraversalCallback(key, value) {
+    console.log({
+      key,
+      value,
+    });
+  }
 
   /** ------------- 外部暴露方法 --------------- */
   // 树是否空
@@ -551,21 +598,59 @@ class RBTree {
       // 插入
       this._insertNode(insertNode, insertPosition, newNode);
       // 调整插入到红节点
-      this._adjustInsertToRed(newNode)
-
+      this._adjustInsertToRed(newNode);
     }
   }
 
   // 删除节点
   delete(key) {
-    const toBeDeletedNode = this._findTreeNodeByKey(this.root, key)
-    if (!toBeDeletedNode) return false
-    this._deleteNode(toBeDeletedNode)
+    const toBeDeletedNode = this._findTreeNodeByKey(this.root, key);
+    if (!toBeDeletedNode) return false;
+    this._deleteNode(toBeDeletedNode);
   }
 
   // 搜索节点
   search(key) {
-    return this._findTreeNodeByKey(this.root, key)?.value
+    return this._findTreeNodeByKey(this.root, key)?.value;
+  }
+
+  // 前序遍历
+  preOrderTraversal(callback = this._defaultTraversalCallback) {
+    this._perOrderTraversalNodes(this.root, callback);
+  }
+
+  // 中序遍历
+  inOrderTraversal(callback = this._defaultTraversalCallback) {
+    this._inOrderTraversalNodes(this.root, callback);
+  }
+
+  // 后序遍历
+  postOrderTraversal(callback = this._defaultTraversalCallback) {
+    this._postOrderTraversalNodes(this.root, callback);
+  }
+
+  // 最小值
+  min() {
+    if (null === this.root) return;
+    let current = this.root;
+    let previous = null;
+    while (!this._isNodeNull(current)) {
+      previous = current;
+      current = current.left;
+    }
+    return { key: previous.key, value: previous.value };
+  }
+
+  // 最大值
+  max() {
+    if (null === this.root) return;
+    let current = this.root;
+    let previous = null;
+    while (!this._isNodeNull(current)) {
+      previous = current;
+      current = current.right;
+    }
+    return { key: previous.key, value: previous.value };
   }
 }
 
@@ -610,13 +695,33 @@ const rbTree = new RBTree();
 // debugger
 
 // TEST 8 6 10 11 12 13 14 15
-rbTree.insert(8);
+// rbTree.insert(8);
+// rbTree.insert(6);
+// rbTree.insert(10);
+// rbTree.insert(11);
+// rbTree.insert(12);
+// rbTree.insert(13);
+// rbTree.insert(14);
+// rbTree.insert(15);
+// rbTree.delete(10);
+
+// TEST
+// rbTree.insert(6);
+// rbTree.insert(2);
+// rbTree.insert(15);
+// rbTree.insert(10);
+// rbTree.insert(18);
+// rbTree.insert(9);
+// rbTree.insert(12);
+
 rbTree.insert(6);
-rbTree.insert(10);
-rbTree.insert(11);
-rbTree.insert(12);
-rbTree.insert(13);
-rbTree.insert(14);
+rbTree.insert(2);
 rbTree.insert(15);
-rbTree.delete(10)
-console.log(rbTree.root);
+rbTree.insert(10);
+rbTree.insert(18);
+rbTree.insert(12);
+rbTree.search(6);
+rbTree.inOrderTraversal();
+console.log(rbTree.min(), rbTree.max());
+
+// console.log(rbTree.root);
