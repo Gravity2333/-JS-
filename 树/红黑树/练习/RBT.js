@@ -533,6 +533,44 @@ export default class RBTree {
     }
   }
 
+  /** 遍历相关 */
+  /** 先序遍历生成器函数 */
+  *preOrderGenerator() {
+    if (this.root === null) return undefined;
+    const stack = [this.root];
+    while (stack?.length > 0) {
+      const node = stack.pop();
+      yield [node.key, node.value];
+      if (!this._isNodeNull(node.right)) {
+        stack.push(node.right);
+      }
+      if (!this._isNodeNull(node.left)) {
+        stack.push(node.left);
+      }
+    }
+  }
+
+  /** 中序遍历生成器函数 */
+  *_InOrderGenerator() {
+    if (this.root === null) return undefined;
+    const stack = [];
+    const handleLeft = (node) => {
+      let current = node;
+      while (!this._isNodeNull(current)) {
+        stack.push(current);
+        current = current.left;
+      }
+    };
+    handleLeft(this.root);
+    while (stack.length > 0) {
+      const node = stack.pop();
+      yield [node.key, node.value];
+      if (node.right) {
+        handleLeft(node.right);
+      }
+    }
+  }
+
   /** 前序遍历方法 */
   _perOrderTraversalNodes(node, callback) {
     if (this._isNodeNull(node)) return;
@@ -655,6 +693,7 @@ export default class RBTree {
     return { key: previous.key, value: previous.value };
   }
 
+  [Symbol.iterator] = () => this._InOrderGenerator(this.root);
 }
 
 //  10 18 8 9 3 2
