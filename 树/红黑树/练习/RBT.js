@@ -1,5 +1,5 @@
 // 定义红黑树
-class RBTree {
+export default class RBTree {
   // 颜色枚举
   static ERBTNodeColor = Object.freeze({
     RED: "RED",
@@ -182,6 +182,7 @@ class RBTree {
     if (axisNode.parent === null) {
       // root节点
       this.root = node;
+      node.parent = null;
     } else {
       const axisNodeInParentPosition = this._getNodePositionInParent(
         axisNode.parent,
@@ -209,6 +210,7 @@ class RBTree {
     if (axisNode.parent === null) {
       // root节点
       this.root = node;
+      node.parent = null;
     } else {
       const axisNodeInParentPosition = this._getNodePositionInParent(
         axisNode.parent,
@@ -216,7 +218,7 @@ class RBTree {
       );
       this._insertNode(axisNode.parent, axisNodeInParentPosition, node);
     }
-    if (node.right) {
+    if (node.left) {
       // 挂载node左节点到axisNode右节点
       this._insertNode(axisNode, RBTree.EChildPosition.RIGHT, node.left);
     }
@@ -314,11 +316,11 @@ class RBTree {
         adjustNodePosition === RBTree.EChildPosition.RIGHT
       ) {
         // 左旋
-        this._leftRound(parent, newNode);
+        this._leftRound(parent, adjustNode);
         // 右旋
-        this._rightRound(grandParent, newNode);
+        this._rightRound(grandParent, adjustNode);
         // 上色
-        newNode.color = RBTree.ERBTNodeColor.BLACK;
+        adjustNode.color = RBTree.ERBTNodeColor.BLACK;
         grandParent.color = RBTree.ERBTNodeColor.RED;
       }
 
@@ -328,11 +330,11 @@ class RBTree {
         adjustNodePosition === RBTree.EChildPosition.LEFT
       ) {
         // 右旋
-        this._rightRound(parent, newNode);
+        this._rightRound(parent, adjustNode);
         // 左旋
-        this._leftRound(grandParent, newNode);
+        this._leftRound(grandParent, adjustNode);
         // 上色
-        newNode.color = RBTree.ERBTNodeColor.BLACK;
+        adjustNode.color = RBTree.ERBTNodeColor.BLACK;
         grandParent.color = RBTree.ERBTNodeColor.RED;
       }
     }
@@ -534,7 +536,7 @@ class RBTree {
   /** 前序遍历方法 */
   _perOrderTraversalNodes(node, callback) {
     if (this._isNodeNull(node)) return;
-    callback(node.key, node.value);
+    callback(node.key, node.value, node.color);
     this._perOrderTraversalNodes(node.left, callback);
     this._perOrderTraversalNodes(node.right, callback);
   }
@@ -543,7 +545,7 @@ class RBTree {
   _inOrderTraversalNodes(node, callback) {
     if (this._isNodeNull(node)) return;
     this._perOrderTraversalNodes(node.left, callback);
-    callback(node.key, node.value);
+    callback(node.key, node.value, node.color);
     this._perOrderTraversalNodes(node.right, callback);
   }
 
@@ -552,7 +554,7 @@ class RBTree {
     if (this._isNodeNull(node)) return;
     this._perOrderTraversalNodes(node.left, callback);
     this._perOrderTraversalNodes(node.right, callback);
-    callback(node.key, node.value);
+    callback(node.key, node.value, node.color);
   }
 
   /** 默认遍历回调 */
@@ -562,7 +564,7 @@ class RBTree {
       value,
     });
   }
-
+  
   /** ------------- 外部暴露方法 --------------- */
   // 树是否空
   empty() {
@@ -611,7 +613,7 @@ class RBTree {
 
   // 搜索节点
   search(key) {
-    return this._findTreeNodeByKey(this.root, key)?.value;
+    return this._findTreeNodeByKey(this.root, key);
   }
 
   // 前序遍历
@@ -653,6 +655,7 @@ class RBTree {
     return { key: previous.key, value: previous.value };
   }
 }
+
 
 //  10 18 8 9 3 2
 const rbTree = new RBTree();
