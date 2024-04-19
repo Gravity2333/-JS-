@@ -511,7 +511,7 @@ export default class RBTree {
       // 待删除节点最多有一个孩子
       // case 1 如果待删除的是跟节点
       if (toBeDeletedNode === this.root) {
-        this.root === null;
+        this.root = null;
         return true;
       }
       // 如果待删除节点为红色，直接删除
