@@ -565,30 +565,6 @@ export default class RBTree {
     });
   }
 
-  /** 获取echarts数据 */
-  _toEchartsData(node) {
-    const data = {};
-    if (!node) return {};
-    if (node.key === RBTree.NIL_KEY) {
-      return {
-        name: "NIL",
-        itemStyle: {
-          color: "black",
-        },
-        symbol: "rect",
-        symbolSize: 30,
-      };
-    }
-    data.name = node.key;
-    data.itemStyle = {
-      color: node.color === RBTree.ERBTNodeColor.RED ? "red" : "black",
-    };
-    data.children = [];
-    data.children.push(this._toEchartsData(node.left));
-    data.children.push(this._toEchartsData(node.right));
-    return data;
-  }
-
   /** ------------- 外部暴露方法 --------------- */
   // 树是否空
   empty() {
@@ -679,10 +655,6 @@ export default class RBTree {
     return { key: previous.key, value: previous.value };
   }
 
-  getEchartsData() {
-    if (null === this.root) return {};
-    return this._toEchartsData(this.root);
-  }
 }
 
 //  10 18 8 9 3 2
