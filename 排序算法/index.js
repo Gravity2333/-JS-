@@ -50,23 +50,106 @@ class ArrayList {
     const list = newArrayList.data;
     // i代表待查肉默认0是有序的，从1开始
     for (let i = 1; i < list.length; i++) {
-      const toBeInsertedVal = list[i]
+      const toBeInsertedVal = list[i];
       for (let j = i - 1; j >= 0; j--) {
         // 如果待插入节点大于当前查找节点,则插入，结束循环
         if (list[j] <= toBeInsertedVal) {
-            list[j+1] = toBeInsertedVal
-            break;
+          list[j + 1] = toBeInsertedVal;
+          break;
         }
         // 如果待插入节点更小，则后移j节点
-        else if(list[j] > toBeInsertedVal){
-            list[j+1] = list[j]
+        else if (list[j] > toBeInsertedVal) {
+          list[j + 1] = list[j];
         }
-        if(j === 0){
-            list[0] = toBeInsertedVal
+        if (j === 0) {
+          list[0] = toBeInsertedVal;
         }
       }
     }
-    return newArrayList
+    return newArrayList;
+  }
+
+  // 希尔排序
+  shellSort() {
+    const newArrayList = new ArrayList(...this.data);
+    const list = newArrayList.data;
+    // gap使用 n/2的形式
+    let gap = Math.floor(list.length / 2);
+    while (gap >= 1) {
+      for (let i = gap; i < list.length; i++) {
+        const toBeInsertedVal = list[i];
+        for (let j = i - gap; j >= 0; j -= gap) {
+          if (list[j] <= toBeInsertedVal) {
+            list[j + gap] = toBeInsertedVal;
+            break;
+          } else if (list[j] > toBeInsertedVal) {
+            list[j + gap] = list[j];
+          }
+          if (j === i - gap) {
+            list[j] = toBeInsertedVal;
+          }
+        }
+      }
+      gap = Math.floor(gap / 2);
+    }
+    return newArrayList;
+  }
+
+  // 快速排序
+  // 交换
+  _swap(i, j, list) {
+    const temp = list[i];
+    list[i] = list[j];
+    list[j] = temp;
+  }
+
+  _quickSortImpl(left, right, list) {
+    if (left >= right) return;
+    // 只要left < right 那么就至少存在两个元素，就可以执行quickSort
+    // 获取pivot,比较三个位置的元素，类似于冒泡
+    const pivot = (() => {
+      const middle = Math.floor((left + right) / 2);
+      if (list[left] > list[middle]) {
+        this._swap(left, middle, list);
+      }
+      if (list[middle] > list[right]) {
+        this._swap(middle, right, list);
+      }
+      if (list[left] > list[middle]) {
+        this._swap(left, right, list);
+      }
+      return list[right - 1];
+    })();
+
+    let i = left + 1;
+    let j = right - 2;
+
+    while (i < j) {
+      while (list[i] < pivot) {
+        i++;
+        if (i >= j) {
+          break;
+        }
+      }
+      while (list[j] > pivot) {
+        j--;
+        if (i >= j) {
+          break;
+        }
+      }
+      this._swap(i++, j--, list);
+    }
+    this._swap(i, right-1, list);
+    this._quickSortImpl(left, i - 1, list);
+    this._quickSortImpl(i + 1, right, list);
+  }
+
+  quickSort() {
+    if (this.data.length === 0) return [];
+    const newArrayList = new ArrayList(...this.data);
+    const list = newArrayList.data;
+    this._quickSortImpl(0, list.length - 1, list);
+    return list;
   }
 
   toString() {
@@ -84,38 +167,40 @@ const arrayList = new ArrayList(
   45,
   22,
   50,
-  10,
-  1,
-  1,
-  100,
-  0,
-  -1,
-  24,
-  1,
-  23494,
-  1230,
-  10,
-  303,
-  40,
-  530,
-  6,
-  1,
-  -1,
-  0,
-  0,
-  0,
-  4,
-  2,
-  3,
-  4,
-  5,
-  1,
-  11,
-  111,
-  22,
-  2334
+  // 10,
+  // 1,
+  // 1,
+  // 100,
+  // 0,
+  // -1,
+  // 24,
+  // 1,
+  // 23494,
+  // 1230,
+  // 10,
+  // 303,
+  // 40,
+  // 530,
+  // 6,
+  // 1,
+  // -1,
+  // 0,
+  // 0,
+  // 0,
+  // 4,
+  // 2,
+  // 3,
+  // 4,
+  // 5,
+  // 1,
+  // 11,
+  // 111,
+  // 22,
+  // 2334
 );
 console.log(`${arrayList}`);
-// console.log(`${arrayList.bubbleSort()}`);
-console.log(`${arrayList.selectionSort()}`);
-console.log(`${arrayList.insertionSort()}`);
+console.log(`${arrayList.bubbleSort()}`);
+// console.log(`${arrayList.selectionSort()}`);
+// console.log(`${arrayList.insertionSort()}`);
+console.log(`${arrayList.shellSort()}`);
+console.log(`${arrayList.quickSort()}`);
