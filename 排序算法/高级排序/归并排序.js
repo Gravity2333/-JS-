@@ -38,5 +38,5 @@ function mergeSort(arguList) {
 const list = [100, 33, 3, 45,
     // 2, 3, 100, 3, 4, 6, 55, 7, 11, 22, 0, 0, 0, 1, 10, 4, 37, 34, 1018, 1225, 17
 ]
-debugger
+
 console.log(mergeSort(list))

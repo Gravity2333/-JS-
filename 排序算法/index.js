@@ -152,26 +152,28 @@ class ArrayList {
   // 归并排序
   _mergeSortImpl(list) {
     // 一个元素的数组，不用排序，直接返回
-    if (list.length <= 1) return list
+    if (list.length <= 1) return list;
     // 如果长度大于1，分组
-    const mid = Math.floor((list.length) / 2)
-    const leftList = this._mergeSortImpl(list.slice(0, mid))
-    const rightList = this._mergeSortImpl(list.slice(mid))
+    const mid = Math.floor(list.length / 2);
+    const leftList = this._mergeSortImpl(list.slice(0, mid));
+    const rightList = this._mergeSortImpl(list.slice(mid));
     // 左右list都是有序的
-    const temp = []
-    let i = 0, j = 0, k = 0
+    const temp = [];
+    let i = 0,
+      j = 0,
+      k = 0;
     while (i < leftList.length && j < rightList.length) {
       if (leftList[i] <= rightList[j]) {
-        temp[k++] = leftList[i++]
+        temp[k++] = leftList[i++];
       } else {
-        temp[k++] = rightList[j++]
+        temp[k++] = rightList[j++];
       }
     }
-    return [...temp, ...leftList.slice(i), ...rightList.slice(j)]
+    return [...temp, ...leftList.slice(i), ...rightList.slice(j)];
   }
 
   mergeSort() {
-    return new ArrayList(...this._mergeSortImpl(this.data))
+    return new ArrayList(...this._mergeSortImpl(this.data));
   }
 
   toString() {
@@ -180,15 +182,10 @@ class ArrayList {
 }
 
 const arrayList = new ArrayList(
-  100,
-  20,
-  30,
   1,
-  0,
-  23,
-  45,
-  22,
-  50,
+  10,
+  2,
+  20
   // 10,
   // 1,
   // 1,
