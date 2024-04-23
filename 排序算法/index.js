@@ -116,8 +116,9 @@ class ArrayList {
         this._swap(middle, right, list);
       }
       if (list[left] > list[middle]) {
-        this._swap(left, right, list);
+        this._swap(left, middle, list);
       }
+      this._swap(middle, right - 1, list);
       return list[right - 1];
     })();
 
@@ -127,19 +128,15 @@ class ArrayList {
     while (i < j) {
       while (list[i] < pivot) {
         i++;
-        if (i >= j) {
-          break;
-        }
       }
       while (list[j] > pivot) {
         j--;
-        if (i >= j) {
-          break;
-        }
       }
-      this._swap(i++, j--, list);
+      if (i < j) {
+        this._swap(i++, j--, list);
+      }
     }
-    this._swap(i, right-1, list);
+    this._swap(i, right - 1, list);
     this._quickSortImpl(left, i - 1, list);
     this._quickSortImpl(i + 1, right, list);
   }
@@ -150,6 +147,31 @@ class ArrayList {
     const list = newArrayList.data;
     this._quickSortImpl(0, list.length - 1, list);
     return list;
+  }
+
+  // 归并排序
+  _mergeSortImpl(list) {
+    // 一个元素的数组，不用排序，直接返回
+    if (list.length <= 1) return list
+    // 如果长度大于1，分组
+    const mid = Math.floor((list.length) / 2)
+    const leftList = this._mergeSortImpl(list.slice(0, mid))
+    const rightList = this._mergeSortImpl(list.slice(mid))
+    // 左右list都是有序的
+    const temp = []
+    let i = 0, j = 0, k = 0
+    while (i < leftList.length && j < rightList.length) {
+      if (leftList[i] <= rightList[j]) {
+        temp[k++] = leftList[i++]
+      } else {
+        temp[k++] = rightList[j++]
+      }
+    }
+    return [...temp, ...leftList.slice(i), ...rightList.slice(j)]
+  }
+
+  mergeSort() {
+    return new ArrayList(...this._mergeSortImpl(this.data))
   }
 
   toString() {
@@ -200,7 +222,8 @@ const arrayList = new ArrayList(
 );
 console.log(`${arrayList}`);
 console.log(`${arrayList.bubbleSort()}`);
-// console.log(`${arrayList.selectionSort()}`);
-// console.log(`${arrayList.insertionSort()}`);
+console.log(`${arrayList.selectionSort()}`);
+console.log(`${arrayList.insertionSort()}`);
 console.log(`${arrayList.shellSort()}`);
 console.log(`${arrayList.quickSort()}`);
+console.log(`${arrayList.mergeSort()}`);
