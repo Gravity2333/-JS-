@@ -1,9 +1,9 @@
-// function swap(index1, index2, list) {
-//   if (index1 >= list.length || index2 >= list.length) return;
-//   const temp = list[index1];
-//   list[index1] = list[index2];
-//   list[index2] = temp;
-// }
+function swap(index1, index2, list) {
+  if (index1 >= list.length || index2 >= list.length) return;
+  const temp = list[index1];
+  list[index1] = list[index2];
+  list[index2] = temp;
+}
 
 // // function countPivot(left, right, list) {
 // //   let middle = Math.floor((left + right) / 2);
@@ -112,23 +112,48 @@
 // // [1,70,10,60,100]
 // // [1,70,60,10,100]
 
-function quickSort(arrParams) {
-  const arr = [...arrParams];
-  if (arr.length<=1) return arr
-  const pivotIndex = Math.floor(arr.length / 2);
-  const pivot = arr.splice(pivotIndex, 1)[0];
-  const left = [];
-  const right = [];
-  for (let i = 0; i < arr.length; i++) {
-    if (arr[i] < pivot) {
-      left.push(arr[i]);
-    } else {
-      right.push(arr[i]);
+// function quickSort(arrParams) {
+//   const arr = [...arrParams];
+//   if (arr.length<=1) return arr
+//   const pivotIndex = Math.floor(arr.length / 2);
+//   const pivot = arr.splice(pivotIndex, 1)[0];
+//   const left = [];
+//   const right = [];
+//   for (let i = 0; i < arr.length; i++) {
+//     if (arr[i] < pivot) {
+//       left.push(arr[i]);
+//     } else {
+//       right.push(arr[i]);
+//     }
+//   }
+//   return [...quickSort(left), pivot, ...quickSort(right)];
+// }
+
+function partition(left, right, list) {
+  let storageIndex = left;
+  let pivot = list[right];
+  for (let i = left; i < right; i++) {
+    if (list[i] < pivot) {
+      swap(storageIndex++, i, list);
     }
   }
-  return [...quickSort(left), pivot, ...quickSort(right)];
+  swap(storageIndex, right, list);
+  return storageIndex;
 }
 
-const arr= [1,10,80,20]
-console.log(quickSort(arr))
-console.log(quickSort(arr))
+function _quickSortImpl(left, right, list) {
+  if (left >= right) return;
+  const pivotIndex = partition(left, right, list);
+  _quickSortImpl(left, pivotIndex - 1,list);
+  _quickSortImpl(pivotIndex + 1, right,list);
+}
+
+function quickSort(listFromParam) {
+  const list = [...listFromParam];
+  _quickSortImpl(0, list.length - 1, list);
+  return list;
+}
+
+const arr = [0, 10, 2, 15, 15, 200];
+console.log(quickSort(arr));
+console.log(quickSort(arr));
